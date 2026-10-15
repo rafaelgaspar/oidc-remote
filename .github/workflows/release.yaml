@@ -11,10 +11,10 @@ concurrency:
 
 jobs:
   npm:
-    name: Publish to npm
+    name: Stage on npm
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # OIDC Trusted Publishing — no NPM_TOKEN needed
+      id-token: write # OIDC Trusted Publishing — stage only, no NPM_TOKEN
       contents: read
     steps:
       - name: Checkout
@@ -33,11 +33,9 @@ jobs:
       # version node-version:24 happens to bundle.
       - run: npm install -g npm@12.0.2
 
-      # Trusted Publishing is configured on npmjs.com once the package exists
-      # (org rafaelgaspar, repo oidc-remote, workflow release.yaml). The first
-      # publish still uses NPM_TOKEN because npm cannot attach a Trusted
-      # Publisher to a name that is not on the registry yet. Later tags use
-      # OIDC; NODE_AUTH_TOKEN is ignored when Trusted Publishing succeeds.
+      # Trusted Publisher (org rafaelgaspar, repo oidc-remote, workflow
+      # release.yaml) may stage only. Direct npm publish and dist-tag
+      # management stay off. A maintainer 2FA-approves the staged version.
       - name: Dist-tag
         id: dist
         run: |
@@ -47,9 +45,7 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm publish --access public --tag ${{ steps.dist.outputs.tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm stage publish --access public --tag ${{ steps.dist.outputs.tag }}
 
   github-release:
     name: Create GitHub Release

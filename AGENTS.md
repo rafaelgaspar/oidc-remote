@@ -44,7 +44,7 @@ Run all of the above before considering a change complete. CI (`ci.yaml`) runs t
 
 ## Release process
 
-Maintainer-only: push a `vX.Y.Z` tag from `main` to trigger `.github/workflows/release.yaml` (npm publish). Contributors don't need to think about this — see `CONTRIBUTING.md` for details if you do.
+Maintainer-only: push a `vX.Y.Z` tag from `main` to trigger `.github/workflows/release.yaml` (`npm stage publish`). A maintainer 2FA-approves the staged package. Contributors don't need to think about this — see `CONTRIBUTING.md` for details if you do.
 
 ## Commit/PR conventions
 
