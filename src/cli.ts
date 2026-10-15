@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { createProxyServer, listen } from "./proxy.js";
 import { runStdio } from "./stdio.js";
@@ -130,8 +131,18 @@ export async function main(argv = process.argv.slice(2), env: NodeJS.ProcessEnv 
   console.error(`oidc-remote proxy listening on http://${addr.host}:${addr.port} -> ${options.upstream}`);
 }
 
-const entry = process.argv[1] ? pathToFileURL(process.argv[1]).href : undefined;
-if (import.meta.url === entry) {
+// npm/npx install the bin as a node_modules/.bin symlink: argv[1] is the link,
+// import.meta.url is the resolved target.
+function entryUrl(argv1: string | undefined): string | undefined {
+  if (!argv1) return undefined;
+  try {
+    return pathToFileURL(realpathSync(argv1)).href;
+  } catch {
+    return pathToFileURL(argv1).href;
+  }
+}
+
+if (import.meta.url === entryUrl(process.argv[1])) {
   main().catch((err: unknown) => {
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);

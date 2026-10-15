@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "./cli.js";
 import { DEFAULT_ASSERTION_FILE, DEFAULT_SCOPE } from "./token.js";
 
@@ -50,4 +55,20 @@ test("parseArgs() accepts = form, env fallbacks, and --listen", () => {
 test("parseArgs() throws a clear error for a value flag with no trailing value", () => {
   assert.throws(() => parseArgs(["stdio", "--gateway"]), /--gateway requires a value/);
   assert.throws(() => parseArgs(["stdio", "--gateway", "x", "--listen"]), /--listen requires a value/);
+});
+
+test("bin runs main() when invoked through a node_modules/.bin-style symlink", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "oidc-remote-bin-"));
+  try {
+    const link = join(dir, "oidc-remote");
+    symlinkSync(fileURLToPath(new URL("./cli.ts", import.meta.url)), link);
+    const result = spawnSync(process.execPath, ["--import", "tsx", link], {
+      encoding: "utf8",
+      timeout: 30_000,
+    });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /usage: oidc-remote/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
