@@ -1,0 +1,50 @@
+{
+  "name": "oidc-remote",
+  "version": "0.1.0",
+  "description": "Attach a live OAuth2 access token on the hop to a remote HTTPS server (library, stdio, proxy).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaelgaspar/oidc-remote"
+  },
+  "homepage": "https://github.com/rafaelgaspar/oidc-remote",
+  "bugs": {
+    "url": "https://github.com/rafaelgaspar/oidc-remote/issues"
+  },
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "oidc-remote": "dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test 'src/**/*.test.ts'"
+  },
+  "keywords": [
+    "oauth2",
+    "oidc",
+    "mcp",
+    "authentik",
+    "kubernetes",
+    "client-assertion"
+  ],
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
