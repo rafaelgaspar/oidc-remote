@@ -1,6 +1,6 @@
 {
   "name": "oidc-remote",
-  "version": "0.1.0-rc2",
+  "version": "0.1.0-rc3",
   "description": "MCP stdio and HTTP proxy: OAuth2 client_credentials + K8s SA JWT assertion for Authentik/Envoy gateways — no static mcp.json secrets.",
   "repository": {
     "type": "git",
