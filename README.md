@@ -4,7 +4,7 @@ Attach a live OAuth2 access token on the hop to a remote HTTPS server.
 
 `oidc-remote` is a **local** process (or library) that gets and refreshes an access token, then injects it as `Authorization: Bearer`. It does not implement an OpenID Provider, and it is not a full OIDC relying party.
 
-The first token backend is Authentik: in-cluster clients federate a projected Kubernetes ServiceAccount JWT as `client_assertion` (`client_credentials` + JWT bearer). Later backends use this same token request.
+The token request is `client_credentials` with a JWT `client_assertion` (for example a projected Kubernetes ServiceAccount token). Any token endpoint that accepts that grant works.
 
 ## Install
 
