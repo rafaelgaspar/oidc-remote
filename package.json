@@ -1,6 +1,6 @@
 {
   "name": "oidc-remote",
-  "version": "0.1.0-rc0",
+  "version": "0.1.0-rc1",
   "description": "Attach a live OAuth2 access token on the hop to a remote HTTPS server (library, stdio, proxy).",
   "repository": {
     "type": "git",
