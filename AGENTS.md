@@ -14,8 +14,7 @@ Authentik is the first token backend (Kubernetes SA JWT as `client_assertion`). 
 src/
   index.ts      # library exports
   token.ts      # TokenClient (exchange + cache)
-  mcp-http.ts   # Streamable HTTP hop with live Bearer
-  stdio.ts      # MCP stdio ↔ HTTP
+  stdio.ts      # MCP SDK stdio ↔ Streamable HTTP (mcp-remote hop, live token())
   proxy.ts      # loopback HTTP reverse proxy
   cli.ts        # argv parsing + bin
 .github/workflows/   # ci.yaml (push/PR), release.yaml (tag push), renovate.yaml, gitleaks.yaml
@@ -37,7 +36,7 @@ Run all of the above before considering a change complete. CI (`ci.yaml`) runs t
 - Failed token exchange throws. Never mint a fallback JWT.
 - Re-read the assertion file on every exchange (projected tokens rotate in place).
 - Cache access tokens until 80% of `expires_in`.
-- `stdio` and `proxy` own the HTTP hop so the Bearer can refresh; do not print a token and exec another process.
+- `stdio` is the MCP SDK stdio ↔ Streamable HTTP hop (what mcp-remote uses). Live Bearer via `authProvider.token()`, not a hand-rolled JSON-RPC pipe and not `print token && exec mcp-remote`.
 - TLS SNI and Host on the upstream hop are the gateway hostname. Do not dial the VIP or ClusterIP as an IP.
 - Public API is the hop plus `client_credentials` + JWT `client_assertion`. Do not add Authentik-only names, paths, or claim types.
 - No comments explaining *what* code does — only *why*, and only when genuinely non-obvious.

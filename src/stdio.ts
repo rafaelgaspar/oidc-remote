@@ -1,23 +1,47 @@
-import readline from "node:readline";
-import type { McpHttpHop } from "./mcp-http.js";
+import type { Readable, Writable } from "node:stream";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 
-export async function runStdio(
-  hop: McpHttpHop,
-  stdin: NodeJS.ReadableStream = process.stdin,
-  stdout: NodeJS.WritableStream = process.stdout,
-): Promise<void> {
-  const rl = readline.createInterface({ input: stdin });
-  try {
-    for await (const line of rl) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const message = JSON.parse(trimmed) as { id?: unknown };
-      const response = await hop.send(message);
-      if (response !== undefined && message.id !== undefined) {
-        stdout.write(`${JSON.stringify(response)}\n`);
-      }
-    }
-  } finally {
-    rl.close();
-  }
+export type StdioOptions = {
+  url: string;
+  getAccessToken: () => Promise<string>;
+  stdin?: Readable;
+  stdout?: Writable;
+};
+
+/**
+ * Same hop as mcp-remote: MCP SDK stdio transport on the parent, Streamable
+ * HTTP to the gateway. `authProvider.token()` runs before every HTTP request
+ * so the Bearer can refresh.
+ */
+export async function runStdio(options: StdioOptions): Promise<void> {
+  const remote = new StreamableHTTPClientTransport(new URL(options.url), {
+    authProvider: { token: options.getAccessToken },
+    onInsufficientScope: "throw",
+  });
+  const local = new StdioServerTransport(options.stdin, options.stdout);
+
+  const report = (err: unknown): void => {
+    console.error(err instanceof Error ? err.message : err);
+  };
+  local.onmessage = (message) => {
+    void remote.send(message).catch(report);
+  };
+  remote.onmessage = (message) => {
+    void local.send(message).catch(report);
+  };
+  local.onerror = report;
+  remote.onerror = report;
+
+  await remote.start();
+  await local.start();
+
+  await new Promise<void>((resolve) => {
+    local.onclose = () => {
+      void remote.close().finally(resolve);
+    };
+    remote.onclose = () => {
+      void local.close();
+    };
+  });
 }

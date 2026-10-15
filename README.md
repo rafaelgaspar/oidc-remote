@@ -51,7 +51,7 @@ For MCP clients that spawn a command (Cursor `mcp.json`, Claude `mcpServers`):
 }
 ```
 
-Stdio to the parent, Streamable HTTP to `https://<gateway>/mcp`, live Bearer on every HTTP request. SNI and Host are the gateway hostname.
+Stdio to the parent, Streamable HTTP to `https://<gateway>/mcp` (MCP SDK transports, same hop as mcp-remote). `authProvider.token()` runs before every HTTP request so the Bearer can refresh. SNI and Host are the gateway hostname.
 
 ### `proxy`
 

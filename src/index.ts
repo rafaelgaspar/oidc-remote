@@ -7,6 +7,5 @@ export {
   TokenExchangeError,
   type TokenClientOptions,
 } from "./token.js";
-export { McpHttpHop, parseSseJson, type JsonRpcMessage } from "./mcp-http.js";
 export { createProxyServer, listen, type ProxyOptions } from "./proxy.js";
-export { runStdio } from "./stdio.js";
+export { runStdio, type StdioOptions } from "./stdio.js";

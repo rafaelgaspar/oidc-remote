@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { pathToFileURL } from "node:url";
-import { McpHttpHop } from "./mcp-http.js";
 import { createProxyServer, listen } from "./proxy.js";
 import { runStdio } from "./stdio.js";
 import { DEFAULT_ASSERTION_FILE, DEFAULT_SCOPE, TokenClient } from "./token.js";
@@ -116,8 +115,10 @@ export async function main(argv = process.argv.slice(2), env: NodeJS.ProcessEnv 
   });
 
   if (options.command === "stdio") {
-    const hop = new McpHttpHop(options.url, () => tokens.getAccessToken());
-    await runStdio(hop);
+    await runStdio({
+      url: options.url,
+      getAccessToken: () => tokens.getAccessToken(),
+    });
     return;
   }
 
