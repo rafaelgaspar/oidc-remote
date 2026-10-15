@@ -11,10 +11,10 @@ concurrency:
 
 jobs:
   npm:
-    name: Stage on npm
+    name: Publish to npm
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # OIDC Trusted Publishing — stage only, no NPM_TOKEN
+      id-token: write # OIDC Trusted Publishing — no NPM_TOKEN
       contents: read
     steps:
       - name: Checkout
@@ -34,8 +34,7 @@ jobs:
       - run: npm install -g npm@12.0.2
 
       # Trusted Publisher (org rafaelgaspar, repo oidc-remote, workflow
-      # release.yaml) may stage only. Direct npm publish and dist-tag
-      # management stay off. A maintainer 2FA-approves the staged version.
+      # release.yaml) may npm publish. The dist-tag is set at publish time.
       - name: Dist-tag
         id: dist
         run: |
@@ -45,7 +44,7 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm stage publish --access public --tag ${{ steps.dist.outputs.tag }}
+      - run: npm publish --access public --tag ${{ steps.dist.outputs.tag }}
 
   github-release:
     name: Create GitHub Release

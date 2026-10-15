@@ -33,7 +33,7 @@ npm run build
 
 Releases are cut by pushing a `vX.Y.Z` tag from `main` (matching `package.json`'s `version`). That triggers `.github/workflows/release.yaml`, which:
 
-- Stages the package on npm (`npm stage publish`). A maintainer 2FA-approves it (`npm stage approve` or the Staged Packages tab on npmjs.com) before it is public.
-- Creates the GitHub Release itself (`softprops/action-gh-release`, auto-generated notes), once staging has succeeded.
+- Publishes to npm (`npm publish --access public`).
+- Creates the GitHub Release itself (`softprops/action-gh-release`, auto-generated notes), once the npm job has succeeded.
 
 Contributors don't need to do any of this — only a maintainer pushing a release tag triggers it.
