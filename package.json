@@ -1,7 +1,7 @@
 {
   "name": "oidc-remote",
   "version": "0.1.0-rc2",
-  "description": "Attach a live OAuth2 access token on the hop to a remote HTTPS server (library, stdio, proxy).",
+  "description": "MCP stdio and HTTP proxy: OAuth2 client_credentials + K8s SA JWT assertion for Authentik/Envoy gateways — no static mcp.json secrets.",
   "repository": {
     "type": "git",
     "url": "https://github.com/rafaelgaspar/oidc-remote"
@@ -39,12 +39,23 @@
     "test": "tsx --test 'src/**/*.test.ts'"
   },
   "keywords": [
-    "oauth2",
-    "oidc",
     "mcp",
-    "authentik",
+    "mcp-remote",
+    "model-context-protocol",
+    "cursor",
+    "claude",
+    "oauth2",
+    "client-credentials",
+    "client-assertion",
+    "jwt-bearer",
     "kubernetes",
-    "client-assertion"
+    "service-account",
+    "projected-volume",
+    "authentik",
+    "envoy-gateway",
+    "streamable-http",
+    "bearer-token",
+    "openai-proxy"
   ],
   "devDependencies": {
     "@types/node": "24.19.2",

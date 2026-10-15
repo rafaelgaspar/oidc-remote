@@ -1,10 +1,26 @@
 # oidc-remote
 
-Attach a live OAuth2 access token on the hop to a remote HTTPS server.
+**Stop pasting long-lived JWTs into `mcp.json`.** Run MCP and HTTP clients against OAuth2-protected gateways using a **projected Kubernetes ServiceAccount token** (or any JWT `client_assertion`) — with automatic refresh on every hop.
 
-`oidc-remote` is a **local** process (or library) that gets and refreshes an access token, then injects it as `Authorization: Bearer`. It does not implement an OpenID Provider, and it is not a full OIDC relying party.
+Built for the same shape as [mcp-remote](https://github.com/modelcontextprotocol/mcp-remote): stdio in the IDE, Streamable HTTP to your gateway — except the Bearer token is exchanged live from the pod, not copied from a secret manager.
 
-The token request is `client_credentials` with a JWT `client_assertion` (for example a projected Kubernetes ServiceAccount token). Any token endpoint that accepts that grant works.
+## Why this exists
+
+| Without `oidc-remote` | With `oidc-remote` |
+|---|---|
+| Mint a static MCP JWT, store it in SOPS, rotate by hand | Pod identity → Authentik (or any IdP) → short-lived access token |
+| `mcp.json` holds secrets that outlive the session | `mcp.json` only points at `oidc-remote stdio` + gateway hostname |
+| OpenAI SDK wants `OPENAI_API_KEY` at startup | `oidc-remote proxy` on loopback; app keeps a dummy URL, proxy adds Bearer |
+| Custom refresh logic in every app | One `TokenClient` (or CLI) shared by MCP stdio, HTTP proxy, and your code |
+
+Typical stack (this is the use case it was written for):
+
+1. **Envoy Gateway** (or similar) validates JWTs on `/mcp` or an AI route.
+2. **Authentik** (or another OAuth2 server) issues tokens for `client_credentials` + JWT bearer assertion.
+3. **Kubernetes** projects a ServiceAccount JWT (often audience-bound) at `/var/run/secrets/tokens/oidc`.
+4. **Cursor, Claude Code, discord-agent, Paperless-AI, …** call the gateway with a fresh Bearer — no mint script in the loop.
+
+`oidc-remote` is the small glue: read assertion → POST token endpoint → cache → inject `Authorization: Bearer` on the **next** HTTPS hop. It is **not** an OpenID Provider and **not** a browser login UI.
 
 ## Install
 
@@ -12,33 +28,11 @@ The token request is `client_credentials` with a JWT `client_assertion` (for exa
 npm install oidc-remote
 ```
 
-Node.js 22+.
+Node.js **22+**. CLI: `npx oidc-remote …`
 
-## Library
+## MCP (Cursor, Claude Desktop, Claude Code)
 
-```ts
-import { TokenClient } from "oidc-remote";
-
-const tokens = new TokenClient({
-  tokenUrl: "https://idp.example/token",
-  clientId: "cluster-mcp.example.test",
-  assertionFile: "/var/run/secrets/tokens/oidc",
-});
-
-const accessToken = await tokens.getAccessToken();
-```
-
-`getAccessToken()` reads the assertion file on each exchange (the projected token is rotated in place), POSTs `grant_type=client_credentials` with `client_assertion`, and caches the access token until 80% of `expires_in`. A failed exchange throws `TokenExchangeError` — it does not mint a fallback token.
-
-Default scope is `openid profile entitlements`. Default assertion path is `/var/run/secrets/tokens/oidc`.
-
-Callers that already speak HTTPS should use `TokenClient` directly and keep the real hostname on the request so TLS SNI and `:authority` match the gateway.
-
-## CLI
-
-### `stdio`
-
-For MCP clients that spawn a command (Cursor `mcp.json`, Claude `mcpServers`):
+Drop-in stdio wrapper — same transport as mcp-remote, with `authProvider.token()` before each HTTP request:
 
 ```json
 "cluster": {
@@ -46,31 +40,71 @@ For MCP clients that spawn a command (Cursor `mcp.json`, Claude `mcpServers`):
   "args": [
     "stdio",
     "--gateway", "cluster-mcp.example.test",
-    "--token-url", "https://idp.example/token"
+    "--token-url", "https://authentik.example/application/o/token/"
   ]
 }
 ```
 
-Stdio to the parent, Streamable HTTP to `https://<gateway>/mcp` (MCP SDK transports, same hop as mcp-remote). `authProvider.token()` runs before every HTTP request so the Bearer can refresh. SNI and Host are the gateway hostname.
+- Parent process speaks MCP over stdio; upstream is Streamable HTTP to `https://<gateway>/mcp`.
+- **SNI and `Host` stay the gateway hostname** (important behind TLS gateways and VIP DNAT).
+- OAuth `client_id` defaults to the gateway hostname; override with `--client-id` when your IdP uses a fixed client id (e.g. `ai.local.example`).
 
-### `proxy`
+Env vars: `OIDC_REMOTE_TOKEN_URL`, `OIDC_REMOTE_ASSERTION_FILE`, `OIDC_REMOTE_SCOPE`.
 
-For HTTP clients that freeze a URL or API key at construct time:
+## OpenAI-compatible apps (API key frozen at boot)
+
+Many clients only accept `OPENAI_BASE_URL` + `OPENAI_API_KEY` once. Run a loopback proxy that refreshes Bearer tokens toward the real AI gateway:
 
 ```bash
 oidc-remote proxy \
   --gateway ai.example.test \
-  --token-url https://idp.example/token \
-  --listen 127.0.0.1:8080
+  --token-url https://authentik.example/application/o/token/ \
+  --listen 127.0.0.1:18789
 ```
 
-Point the app at `http://127.0.0.1:8080` (plaintext loopback). The proxy injects Bearer and forwards to `https://<gateway>` with that hostname as SNI/Host.
+Point the app at `http://127.0.0.1:18789/v1` (plaintext on loopback only). The proxy forwards to `https://<gateway>` with correct TLS identity.
 
-### Flags
+## Library
+
+Use when you already control the HTTP client (discord-agent, custom Node services):
+
+```ts
+import { TokenClient } from "oidc-remote";
+
+const tokens = new TokenClient({
+  tokenUrl: "https://authentik.example/application/o/token/",
+  clientId: "cluster-mcp.example.test",
+  assertionFile: "/var/run/secrets/tokens/oidc",
+});
+
+const accessToken = await tokens.getAccessToken();
+```
+
+- Re-reads the assertion file on **every** exchange (projected K8s tokens rotate in place).
+- Caches the access token until ~80% of `expires_in`.
+- Failed exchange → `TokenExchangeError` (no fallback JWT).
+
+Default scope: `openid profile entitlements`. Default assertion path: `/var/run/secrets/tokens/oidc`.
+
+## Token exchange (what gets sent)
+
+Only the **token URL** sees the ServiceAccount JWT. The gateway never does.
+
+```
+grant_type=client_credentials
+client_id=<gateway hostname or --client-id>
+client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+client_assertion=<contents of assertion file>
+scope=openid profile entitlements   # override with --scope
+```
+
+Any OAuth2 server that accepts that grant works; Authentik + Kubernetes SA JWT is the reference setup.
+
+## CLI reference
 
 | Flag | Env | Default |
 |---|---|---|
-| `--gateway` | | *(required)* hostname; also the OAuth `client_id` unless `--client-id` is set |
+| `--gateway` | | *(required)* hostname; default OAuth `client_id` |
 | `--token-url` | `OIDC_REMOTE_TOKEN_URL` | *(required)* |
 | `--assertion-file` | `OIDC_REMOTE_ASSERTION_FILE` | `/var/run/secrets/tokens/oidc` |
 | `--scope` | `OIDC_REMOTE_SCOPE` | `openid profile entitlements` |
@@ -82,8 +116,9 @@ Point the app at `http://127.0.0.1:8080` (plaintext loopback). The proxy injects
 
 ## What this is not
 
-- Not an OIDC stack. No authorization-code browser flow, no DCR, no PKCE.
-- Assertion JWTs never go to the gateway. They are only exchanged at the token URL.
+- Not a full OIDC/OAuth client (no auth code, PKCE, DCR, or refresh tokens for user login).
+- Not a replacement for your IdP or gateway — only the **client side** of `client_credentials` + JWT assertion.
+- Assertion JWTs are **not** forwarded to the gateway; only the exchanged access token is.
 
 ## License
 
