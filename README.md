@@ -28,16 +28,16 @@ Typical stack (this is the use case it was written for):
 npm install oidc-remote
 ```
 
-Node.js **22+**. CLI: `npx oidc-remote …`
-
 ## MCP (Cursor, Claude Desktop, Claude Code)
 
 Drop-in stdio wrapper — same transport as mcp-remote, with `authProvider.token()` before each HTTP request:
 
 ```json
 "cluster": {
-  "command": "oidc-remote",
+  "command": "npx",
   "args": [
+    "-y",
+    "oidc-remote",
     "stdio",
     "--gateway", "cluster-mcp.example.test",
     "--token-url", "https://authentik.example/application/o/token/"
