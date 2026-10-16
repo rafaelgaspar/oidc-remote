@@ -34,6 +34,7 @@ npm run build
 Releases are cut by pushing a `vX.Y.Z` tag from `main` (matching `package.json`'s `version`). That triggers `.github/workflows/release.yaml`, which:
 
 - Publishes to npm (`npm publish --access public`).
-- Creates the GitHub Release itself (`softprops/action-gh-release`, auto-generated notes), once the npm job has succeeded.
+- Builds and pushes the multi-arch container image to `ghcr.io/rafaelgaspar/oidc-remote:<version>` and `:latest`, with provenance and SBOM attestations. PRs build the same image in `ci.yaml` without pushing it.
+- Creates the GitHub Release itself (`softprops/action-gh-release`, auto-generated notes), once the npm and image jobs have succeeded.
 
 Contributors don't need to do any of this — only a maintainer pushing a release tag triggers it.
