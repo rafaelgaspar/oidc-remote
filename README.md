@@ -28,6 +28,13 @@ Typical stack (this is the use case it was written for):
 npm install oidc-remote
 ```
 
+Or the container image, `ghcr.io/rafaelgaspar/oidc-remote` (linux/amd64 + linux/arm64, tags are plain versions like `0.1.0-rc3` plus `latest`). It runs as uid 1000, and `oidc-remote` is the entrypoint, so container args are the CLI args:
+
+```yaml
+image: ghcr.io/rafaelgaspar/oidc-remote:0.1.0-rc3
+args: [proxy, --gateway, ai.example.test, --token-url, https://authentik.example/application/o/token/, --listen, 127.0.0.1:18789]
+```
+
 ## MCP (Cursor, Claude Desktop, Claude Code)
 
 Drop-in stdio wrapper — same transport as mcp-remote, with `authProvider.token()` before each HTTP request:

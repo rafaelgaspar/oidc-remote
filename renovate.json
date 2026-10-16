@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Renovate for oidc-remote — npm dependencies and GitHub Actions pins.",
+  "description": "Renovate for oidc-remote — npm dependencies, Dockerfile base image + syntax pin, GitHub Actions pins. Excludes the project's own published image (ghcr.io/rafaelgaspar/oidc-remote), which is versioned by the release pipeline, not Renovate.",
   "extends": [
     "config:best-practices",
     ":semanticCommits",
@@ -9,6 +9,7 @@
   ],
   "timezone": "UTC",
   "dependencyDashboardTitle": "Renovate Dependency Dashboard - oidc-remote",
+  "ignoreDeps": ["ghcr.io/rafaelgaspar/oidc-remote"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 4am on monday"]
@@ -20,6 +21,12 @@
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "npm dependencies",
       "groupSlug": "npm-dependencies"
+    },
+    {
+      "description": "Dockerfile base image + syntax pin updates in one PR",
+      "matchManagers": ["dockerfile"],
+      "groupName": "Dockerfile pins",
+      "groupSlug": "dockerfile-pins"
     },
     {
       "description": "All non-major GitHub Actions updates (tags, digests) in one PR; majors stay separate",

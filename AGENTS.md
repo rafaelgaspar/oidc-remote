@@ -17,6 +17,7 @@ src/
   stdio.ts      # MCP SDK stdio ↔ Streamable HTTP (mcp-remote hop, live token())
   proxy.ts      # loopback HTTP reverse proxy
   cli.ts        # argv parsing + bin
+Dockerfile      # ghcr.io image: debian:forky + Node 26, oidc-remote as ENTRYPOINT
 .github/workflows/   # ci.yaml (push/PR), release.yaml (tag push), renovate.yaml, gitleaks.yaml
 ```
 
@@ -44,7 +45,7 @@ Run all of the above before considering a change complete. CI (`ci.yaml`) runs t
 
 ## Release process
 
-Maintainer-only: push a `vX.Y.Z` tag from `main` to trigger `.github/workflows/release.yaml` (npm publish). Contributors don't need to think about this — see `CONTRIBUTING.md` for details if you do.
+Maintainer-only: push a `vX.Y.Z` tag from `main` to trigger `.github/workflows/release.yaml` (npm publish + GHCR image). Contributors don't need to think about this — see `CONTRIBUTING.md` for details if you do.
 
 ## Commit/PR conventions
 
