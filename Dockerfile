@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-FROM debian:forky@sha256:716a7ceeaf1557c357a3c484839176dab750fbda0c5d0530dbbb18f94ccf826b AS node
+FROM debian:forky@sha256:8ba3df177e65d13cb4392a490db1c48cb7f85461b5769f60eb37725221b8b203 AS node
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
