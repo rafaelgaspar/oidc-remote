@@ -8,7 +8,9 @@
     ":label(renovate)"
   ],
   "timezone": "UTC",
-  "dependencyDashboardTitle": "Renovate Dependency Dashboard - oidc-remote",
+  "dependencyDashboard": {
+    "title": "Renovate Dependency Dashboard - oidc-remote"
+  },
   "ignoreDeps": ["ghcr.io/rafaelgaspar/oidc-remote"],
   "lockFileMaintenance": {
     "enabled": true,
